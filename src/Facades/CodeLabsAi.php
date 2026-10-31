@@ -2,6 +2,8 @@
 
 namespace CodeLabs\Ai\Facades;
 
+use CodeLabs\Ai\CallContext;
+use CodeLabs\Ai\CallInfo;
 use CodeLabs\Ai\KeyUsage;
 use Illuminate\Support\Facades\Facade;
 
@@ -18,6 +20,9 @@ use Illuminate\Support\Facades\Facade;
  * @method static void refresh()
  * @method static array providersFor(string $agent)
  * @method static KeyUsage usage(?string $name = null)
+ * @method static CallContext context()
+ * @method static mixed withContext(array $values, \Closure $callback)
+ * @method static CallInfo|null lastCall()
  *
  * @see \CodeLabs\Ai\CodeLabsAi
  */

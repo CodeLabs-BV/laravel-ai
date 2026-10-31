@@ -101,6 +101,34 @@ Add one connection per key in `config/codelabs-ai.php`. Each one becomes an SDK 
 
 A connection without a key is not registered, so a feature that checks `config("ai.providers.<name>.key")` reports it as unavailable.
 
+## Attribution, cost per call and caching
+
+The gateway splits spend by key by default. Tell it what a call is for and it can split by app, feature, tenant and conversation as well. Wrap the calls in a context; it becomes `x-litellm-*` request headers and is restored afterwards:
+
+```php
+use CodeLabs\Ai\Facades\CodeLabsAi;
+
+CodeLabsAi::withContext([
+    'tags' => ['feature:match-advice'],     // added to the app tag (CODELABS_AI_TAG, defaults to APP_NAME)
+    'session' => $conversation->id,         // groups the calls of one conversation
+    'customer' => $club->id,                // tenant or user the call is for
+    'metadata' => ['team' => $team->id],    // extra fields in the spend log
+    'cache' => 3600,                        // opt chat calls into the gateway's response cache (seconds)
+], fn () => $agent->prompt($text));
+```
+
+`cache` is opt-in: the gateway caches nothing unless a call asks for it, so a chat answer is never reused by accident.
+
+Every response is reported back. Listen to `CodeLabs\Ai\Events\CodeLabsCallCompleted` for cost, call id, retries, fallbacks and duration, or read `CodeLabsAi::lastCall()`:
+
+```php
+Event::listen(CodeLabsCallCompleted::class, function ($e) {
+    Log::info('ai', ['cost' => $e->call->cost, 'call' => $e->call->callId, 'fallbacks' => $e->call->fallbacks]);
+});
+```
+
+Fields the gateway did not send are `null`.
+
 ## Tests
 
 ```bash

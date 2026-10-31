@@ -78,6 +78,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Tags
+    |--------------------------------------------------------------------------
+    |
+    | Sent on every call as `x-litellm-tags`, so the gateway's spend can be
+    | split per app. Add per-feature tags in code with
+    | CodeLabsAi::withContext(['tags' => ['feature:summaries']], fn () => ...).
+    |
+    */
+
+    'tags' => array_filter([env('CODELABS_AI_TAG', env('APP_NAME') ? \Illuminate\Support\Str::slug(env('APP_NAME')) : null)]),
+
+    /*
+    |--------------------------------------------------------------------------
     | HTTP Timeout
     |--------------------------------------------------------------------------
     |

@@ -26,6 +26,7 @@ class CodeLabsAiServiceProvider extends ServiceProvider
             $app->make(Factory::class),
             $app,
             $app->make(KeyStore::class),
+            new CallContext(array_values(array_filter((array) $app['config']->get('codelabs-ai.tags', [])))),
         ));
 
         $this->callAfterResolving(AiManager::class, function (AiManager $manager): void {

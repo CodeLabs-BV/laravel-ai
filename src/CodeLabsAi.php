@@ -5,7 +5,10 @@ namespace CodeLabs\Ai;
 use CodeLabs\Ai\Concerns\UsesCodeLabs;
 use CodeLabs\Ai\Contracts\KeyStore;
 use Illuminate\Contracts\Config\Repository;
+use Closure;
+use CodeLabs\Ai\Events\CodeLabsCallCompleted;
 use Illuminate\Contracts\Container\Container;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\Client\Factory as Http;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Str;
@@ -36,7 +39,52 @@ class CodeLabsAi
         private readonly Http $http,
         private readonly Container $container,
         private readonly ?KeyStore $store = null,
+        private readonly CallContext $context = new CallContext,
     ) {}
+
+    private ?CallInfo $lastCall = null;
+
+    /**
+     * Tags, session, customer and metadata sent to the gateway with each call.
+     */
+    public function context(): CallContext
+    {
+        return $this->context;
+    }
+
+    /**
+     * Run `$callback` with extra gateway context, see CallContext::with().
+     *
+     * @template T
+     *
+     * @param  array<string, mixed>  $values
+     * @param  Closure(): T  $callback
+     * @return T
+     */
+    public function withContext(array $values, Closure $callback): mixed
+    {
+        return $this->context->with($values, $callback);
+    }
+
+    /**
+     * The gateway's report on the most recent call in this process.
+     */
+    public function lastCall(): ?CallInfo
+    {
+        return $this->lastCall;
+    }
+
+    /**
+     * @internal called by the gateway after each response
+     */
+    public function recordCall(string $connection, CallInfo $call): void
+    {
+        $this->lastCall = $call;
+
+        $this->container->make(Dispatcher::class)->dispatch(
+            new CodeLabsCallCompleted($connection, (string) $this->config->get("ai.providers.{$connection}.url"), $call),
+        );
+    }
 
     /**
      * The connection's settings: config/codelabs-ai.php with the stored key
