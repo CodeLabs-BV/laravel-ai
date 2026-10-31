@@ -86,3 +86,11 @@ it('leaves unreported fields null', function () {
 
     expect(CodeLabsAi::lastCall()->cost)->toBeNull()->and(CodeLabsAi::lastCall()->status)->toBe(200);
 });
+
+it('falls back to the original cost header, which is all the gateway sends for local models', function () {
+    Http::fake(['ai.code-labs.nl/*' => Http::response(completion(), 200, ['x-litellm-response-cost-original' => '0.0'])]);
+
+    agent('Be brief.')->prompt('Hi', provider: 'codelabs');
+
+    expect(CodeLabsAi::lastCall()->cost)->toBe(0.0);
+});

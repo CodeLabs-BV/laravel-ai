@@ -32,7 +32,7 @@ final readonly class CallInfo
         return new self(
             callId: $header('x-litellm-call-id'),
             model: $header('x-litellm-model-group'),
-            cost: $number('x-litellm-response-cost'),
+            cost: $number('x-litellm-response-cost') ?? $number('x-litellm-response-cost-original'),
             keySpend: $number('x-litellm-key-spend'),
             retries: $count('x-litellm-attempted-retries'),
             fallbacks: $count('x-litellm-attempted-fallbacks'),
